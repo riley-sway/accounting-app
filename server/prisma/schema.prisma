@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Client {
+  id           Int       @id @default(autoincrement())
+  businessName String
+  contactName  String
+  email        String
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postcode     String?
+  country      String    @default("Canada")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  invoices     Invoice[]
+}
+
+model Invoice {
+  id            Int               @id @default(autoincrement())
+  invoiceNumber String            @unique
+  clientId      Int
+  client        Client            @relation(fields: [clientId], references: [id])
+  status        String            @default("draft")
+  issueDate     String
+  dueDate       String
+  paymentTerms  String?
+  notes         String?
+  taxRate       Int               @default(0)
+  taxLabel      String?
+  subtotalCents Int               @default(0)
+  taxCents      Int               @default(0)
+  totalCents    Int               @default(0)
+  paidAt        String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  lineItems     InvoiceLineItem[]
+}
+
+model InvoiceLineItem {
+  id             Int     @id @default(autoincrement())
+  invoiceId      Int
+  invoice        Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description    String
+  quantity       Int
+  unitPriceCents Int
+  lineTotalCents Int
+  sortOrder      Int     @default(0)
+}
+
+model Settings {
+  id             Int    @id @default(1)
+  businessName   String @default("Sway Creative")
+  abn            String?
+  invoicePrefix  String @default("INV")
+  nextNumber     Int    @default(1)
+  defaultTaxRate Int    @default(1000)
+  defaultTerms   String @default("NET_30")
+}

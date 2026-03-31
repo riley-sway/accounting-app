@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+/* ── Colour tokens ─────────────────────────────────────────── */
+:root {
+  --bg-page:     #F8FAFC;
+  --bg-card:     #ffffff;
+  --bg-subtle:   #eceef0;
+  --bg-input:    #ffffff;
+  --bg-topbar:   rgba(255,255,255,0.7);
+  --text-primary:   #191c1e;
+  --text-secondary: #45464d;
+  --border:      #e2e8f0;
+  --border-subtle: #f1f5f9;
+  --divide:      #f8fafc;
+  --shadow:      rgba(25, 28, 30, 0.06);
+}
+
+html.dark {
+  --bg-page:     #0f1117;
+  --bg-card:     #1a1f2e;
+  --bg-subtle:   #242a3a;
+  --bg-input:    #1c2028;
+  --bg-topbar:   rgba(20, 23, 30, 0.85);
+  --text-primary:   #e2e8f0;
+  --text-secondary: #e2eaf4;
+  --border:      #2e3647;
+  --border-subtle: #252b37;
+  --divide:      #1e2330;
+  --shadow:      rgba(0, 0, 0, 0.25);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  line-height: 1;
+}
+
+.whisper-shadow {
+  box-shadow: 0 12px 40px var(--shadow);
+}
+
+/* ── Tailwind class overrides for dark mode ────────────────── */
+html.dark .bg-white        { background-color: var(--bg-card) !important; border-color: var(--border) !important; }
+html.dark .bg-slate-50     { background-color: var(--bg-subtle) !important; }
+html.dark .bg-slate-100    { background-color: var(--bg-subtle) !important; }
+html.dark .border-slate-200 { border-color: var(--border) !important; }
+html.dark .border-slate-100 { border-color: var(--border-subtle) !important; }
+html.dark .divide-slate-50 > * + * { border-color: var(--divide) !important; }
+html.dark .text-slate-600  { color: var(--text-secondary) !important; }
+html.dark .text-slate-700  { color: var(--text-secondary) !important; }
+html.dark .hover\:bg-slate-50:hover  { background-color: var(--bg-subtle) !important; }
+html.dark .hover\:bg-slate-100:hover { background-color: var(--bg-subtle) !important; }
+html.dark input, html.dark textarea, html.dark select {
+  background-color: var(--bg-input) !important;
+  border-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+html.dark input::placeholder, html.dark textarea::placeholder {
+  color: var(--text-secondary) !important;
+}
