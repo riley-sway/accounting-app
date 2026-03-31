@@ -11,10 +11,11 @@ import importRouter from './routes/import.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
-const PORT = 3001
+const PORT = process.env.PORT || 3001
+const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173'
 
 app.use(helmet({ contentSecurityPolicy: false }))
-app.use(cors({ origin: 'http://localhost:5173' }))
+app.use(cors({ origin: CORS_ORIGIN }))
 app.use(morgan('dev'))
 app.use(express.json())
 
