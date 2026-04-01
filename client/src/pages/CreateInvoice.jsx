@@ -124,6 +124,7 @@ export default function CreateInvoice() {
 
   // Submit
   const [pendingPDF, setPendingPDF] = useState(null) // 'download' | 'print' | null
+  const [pendingMailto, setPendingMailto] = useState(null)
 
   const mutation = useMutation({
     mutationFn: (payload) =>
@@ -135,7 +136,12 @@ export default function CreateInvoice() {
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-activity'] })
       queryClient.invalidateQueries({ queryKey: ['next-invoice-number'] })
-      if (pendingPDF) {
+      if (pendingMailto) {
+        window.location.href = pendingMailto
+        setPendingMailto(null)
+        toast.success(`${res.data.invoiceNumber} created`)
+        navigate('/invoices')
+      } else if (pendingPDF) {
         const savedId = res.data.id
         const savedNum = res.data.invoiceNumber
         if (pendingPDF === 'download') {
@@ -192,6 +198,22 @@ export default function CreateInvoice() {
     } else {
       setPendingPDF(mode)
       mutation.mutate(buildPayload('draft'))
+    }
+  }
+
+  const handleCreateAndSend = () => {
+    if (!form.clientId) return toast.error('Please select a client')
+    if (!form.dueDate) return toast.error('Please set a due date')
+    if (lineItems.some((li) => !li.service)) return toast.error('All line items need a description')
+    const client = clients.find((c) => c.id === Number(form.clientId))
+    const subject = encodeURIComponent(`Invoice ${invoiceNumber}`)
+    const body = encodeURIComponent(`Hi ${client?.contactName || ''},\n\nPlease find attached invoice ${invoiceNumber}.\n\nThank you for your business.`)
+    const mailto = `mailto:${client?.email || ''}?subject=${subject}&body=${body}`
+    if (isEdit) {
+      window.location.href = mailto
+    } else {
+      setPendingMailto(mailto)
+      mutation.mutate(buildPayload('sent'))
     }
   }
 
@@ -450,8 +472,16 @@ export default function CreateInvoice() {
               onClick={() => handleSubmit('sent')}
               disabled={mutation.isPending}
             >
+              <span className="material-symbols-outlined text-[16px]">check</span>
+              {isEdit ? 'Save & Mark Sent' : 'Create'}
+            </Button>
+            <Button
+              className="w-full justify-center"
+              onClick={() => handleCreateAndSend()}
+              disabled={mutation.isPending}
+            >
               <span className="material-symbols-outlined text-[16px]">send</span>
-              {isEdit ? 'Save & Mark Sent' : 'Create & Send'}
+              {isEdit ? 'Save & Send' : 'Create & Send'}
             </Button>
             <Button
               variant="secondary"
