@@ -1,16 +1,13 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
 import Badge from '../ui/Badge'
-import InvoicePDFPreviewModal from './InvoicePDFPreviewModal'
 import { formatCurrency, formatDate } from '../../lib/formatters'
 import api, { apiUrl } from '../../lib/api'
 
 export default function InvoiceRow({ invoice }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [showPreview, setShowPreview] = useState(false)
 
   const changeStatus = useMutation({
     mutationFn: (status) => api.patch(`/invoices/${invoice.id}/status`, { status }),
@@ -80,7 +77,7 @@ export default function InvoiceRow({ invoice }) {
         <td className="px-8 py-5 text-right">
           <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={() => setShowPreview(true)}
+              onClick={() => window.open(apiUrl(`/invoices/${invoice.id}/pdf`), '_blank')}
               className="p-2 rounded-full hover:bg-slate-100 transition-colors"
               title="Preview PDF"
               style={{ color: 'var(--text-secondary)' }}
@@ -127,13 +124,6 @@ export default function InvoiceRow({ invoice }) {
         </td>
       </tr>
 
-      {showPreview && (
-        <tr>
-          <td colSpan={7}>
-            <InvoicePDFPreviewModal invoice={invoice} onClose={() => setShowPreview(false)} />
-          </td>
-        </tr>
-      )}
     </>
   )
 }
