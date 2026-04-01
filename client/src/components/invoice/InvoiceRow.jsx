@@ -28,6 +28,21 @@ export default function InvoiceRow({ invoice }) {
     if (window.confirm(`Mark ${invoice.invoiceNumber} as unpaid? It will be set back to sent.`)) changeStatus.mutate('sent')
   }
 
+  const deleteInvoice = useMutation({
+    mutationFn: () => api.delete(`/invoices/${invoice.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoices'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-activity'] })
+      toast.success(`${invoice.invoiceNumber} deleted`)
+    },
+    onError: () => toast.error('Failed to delete invoice'),
+  })
+
+  const handleDelete = () => {
+    if (window.confirm(`Delete ${invoice.invoiceNumber}? This cannot be undone.`)) deleteInvoice.mutate()
+  }
+
   const handleDownload = () => {
     window.open(apiUrl(`/invoices/${invoice.id}/pdf`), '_blank')
   }
@@ -120,6 +135,14 @@ export default function InvoiceRow({ invoice }) {
                 <span className="material-symbols-outlined text-[18px]">remove_done</span>
               </button>
             )}
+            <button
+              onClick={handleDelete}
+              className="p-2 rounded-full hover:bg-red-50 transition-colors"
+              title="Delete"
+              style={{ color: '#ef4444' }}
+            >
+              <span className="material-symbols-outlined text-[18px]">delete</span>
+            </button>
           </div>
         </td>
       </tr>
