@@ -48,7 +48,7 @@ const termsMap = {
 
 export async function generateInvoicePDF(invoice, settings) {
   const businessName = settings?.businessName || 'Sway Creative'
-  const abnText = settings?.abn ? ` — ABN ${settings.abn}` : ''
+
   const CONTENT_W = PAGE_W - MARGIN * 2
 
   return new Promise((resolve, reject) => {
@@ -198,7 +198,7 @@ export async function generateInvoicePDF(invoice, settings) {
     // ── FOOTER ────────────────────────────────────────────────────────────────
     doc.moveTo(MARGIN, footerY).lineTo(PAGE_W - MARGIN, footerY).strokeColor(BORDER).stroke()
     doc.fontSize(9).fillColor(MUTED).font('Helvetica')
-      .text(`${businessName}${abnText}`, MARGIN, footerY + 10, { width: CONTENT_W * 0.6 })
+      .text(businessName, MARGIN, footerY + 10, { width: CONTENT_W * 0.6 })
       .text('Thank you for your business.', MARGIN, footerY + 10, { width: CONTENT_W, align: 'right' })
 
     doc.end()
