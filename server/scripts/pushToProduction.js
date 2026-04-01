@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 
-const RAILWAY_URL = 'https://accounting-app-production-d30f.up.railway.app'
+const RAILWAY_URL = 'https://accounting-app-server.fly.dev'
 const MIGRATE_SECRET = process.env.MIGRATE_SECRET
 
 if (!MIGRATE_SECRET) {
