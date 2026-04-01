@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url)
 const PDFDocument = require('pdfkit')
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const LOGO_PATH = path.resolve(__dirname, '../../../branding/sway-logo-white-transparent.png')
+const LOGO_PATH = path.resolve(__dirname, '../assets/logo.png')
 
 const DARK = '#0F172A'
 const WHITE = '#FFFFFF'
