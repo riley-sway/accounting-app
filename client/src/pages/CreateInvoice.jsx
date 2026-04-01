@@ -495,15 +495,6 @@ export default function CreateInvoice() {
             <Button
               variant="secondary"
               className="w-full justify-center"
-              onClick={() => handlePDF('print')}
-              disabled={mutation.isPending}
-            >
-              <span className="material-symbols-outlined text-[16px]">print</span>
-              Print
-            </Button>
-            <Button
-              variant="secondary"
-              className="w-full justify-center"
               onClick={() => handleSubmit('draft')}
               disabled={mutation.isPending}
             >
