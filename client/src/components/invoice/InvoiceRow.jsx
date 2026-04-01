@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast'
 import Badge from '../ui/Badge'
 import InvoicePDFPreviewModal from './InvoicePDFPreviewModal'
 import { formatCurrency, formatDate } from '../../lib/formatters'
-import api from '../../lib/api'
+import api, { apiUrl } from '../../lib/api'
 
 export default function InvoiceRow({ invoice }) {
   const navigate = useNavigate()
@@ -33,7 +33,7 @@ export default function InvoiceRow({ invoice }) {
 
   const handleDownload = () => {
     const a = document.createElement('a')
-    a.href = `/api/invoices/${invoice.id}/pdf`
+    a.href = apiUrl(`/invoices/${invoice.id}/pdf`)
     a.download = `${invoice.invoiceNumber}.pdf`
     a.click()
   }

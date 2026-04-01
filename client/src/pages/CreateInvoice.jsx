@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'react-hot-toast'
-import api from '../lib/api'
+import api, { apiUrl } from '../lib/api'
 import { formatCurrency } from '../lib/formatters'
 import { PAYMENT_TERMS } from '../lib/constants'
 import Button from '../components/ui/Button'
@@ -146,7 +146,7 @@ export default function CreateInvoice() {
         const savedNum = res.data.invoiceNumber
         if (pendingPDF === 'download') {
           const a = document.createElement('a')
-          a.href = `/api/invoices/${savedId}/pdf`
+          a.href = apiUrl(`/invoices/${savedId}/pdf`)
           a.download = `${savedNum}.pdf`
           a.click()
         } else {
@@ -189,7 +189,7 @@ export default function CreateInvoice() {
     if (isEdit) {
       if (mode === 'download') {
         const a = document.createElement('a')
-        a.href = `/api/invoices/${id}/pdf`
+        a.href = apiUrl(`/invoices/${id}/pdf`)
         a.download = `${invoiceNumber}.pdf`
         a.click()
       } else {

@@ -1,8 +1,9 @@
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
+import { apiUrl } from '../../lib/api'
 
 export default function InvoicePDFPreviewModal({ invoice, onClose }) {
-  const pdfUrl = `/api/invoices/${invoice.id}/pdf`
+  const pdfUrl = apiUrl(`/invoices/${invoice.id}/pdf`)
 
   const handleDownload = () => {
     const a = document.createElement('a')

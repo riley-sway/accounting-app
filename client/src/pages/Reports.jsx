@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api from '../lib/api'
+import api, { apiUrl } from '../lib/api'
 import { formatCurrency } from '../lib/formatters'
 import StatCard from '../components/ui/StatCard'
 import RevenueChart from '../components/reports/RevenueChart'
@@ -34,7 +34,7 @@ export default function Reports() {
 
   const handleExportPDF = () => {
     const a = document.createElement('a')
-    a.href = `/api/reports/pdf?year=${year}`
+    a.href = apiUrl(`/reports/pdf?year=${year}`)
     a.download = `report-${year}.pdf`
     a.click()
   }
