@@ -205,9 +205,6 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const invoice = await prisma.invoice.findUnique({ where: { id: Number(req.params.id) } })
     if (!invoice) return res.status(404).json({ error: 'Invoice not found' })
-    if (invoice.status !== 'draft') {
-      return res.status(409).json({ error: 'Only draft invoices can be deleted' })
-    }
     await prisma.invoice.delete({ where: { id: Number(req.params.id) } })
     res.status(204).end()
   } catch (e) {
