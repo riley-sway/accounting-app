@@ -1,11 +1,27 @@
+import { createRequire } from 'module'
 import { PrismaClient } from '@prisma/client'
-import puppeteer from 'puppeteer'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
+
+const PDFDocument = createRequire(import.meta.url)('pdfkit')
 
 const prisma = new PrismaClient()
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+const DARK = '#0F172A'
+const WHITE = '#FFFFFF'
+const MUTED = '#45464d'
+const SLATE = '#94a3b8'
+const BORDER = '#e0e3e5'
+const GREEN = '#10B981'
+const AMBER = '#F59E0B'
+const ROW_ALT = '#f7f9fb'
+
+const PAGE_W = 595.28
+const MARGIN = 40
+const CONTENT_W = PAGE_W - MARGIN * 2
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+function fmt(cents) {
+  return '$' + (cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
 
 export async function getMonthlyReport(year) {
   const months = []
@@ -38,129 +54,102 @@ export async function getMonthlyReport(year) {
 export async function generateReportPDF(year) {
   const data = await getMonthlyReport(year)
   const settings = await prisma.settings.findUnique({ where: { id: 1 } })
+  const businessName = settings?.businessName || 'Sway Creative'
+  const abnText = settings?.abn ? ` — ABN ${settings.abn}` : ''
 
   const totalInvoiced = data.reduce((s, m) => s + m.invoicedCents, 0)
   const totalPaid = data.reduce((s, m) => s + m.paidCents, 0)
   const totalOutstanding = totalInvoiced - totalPaid
 
-  const fmt = (cents) =>
-    '$' + (cents / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: 'A4', margin: 0, info: { Title: `${businessName} — ${year} Report` } })
+    const chunks = []
+    doc.on('data', c => chunks.push(c))
+    doc.on('end', () => resolve(Buffer.concat(chunks)))
+    doc.on('error', reject)
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    // ── HEADER ────────────────────────────────────────────────────────────────
+    doc.rect(0, 0, PAGE_W, 90).fill(DARK)
+    doc.fontSize(9).fillColor(SLATE).font('Helvetica').text('ANNUAL REPORT', MARGIN, 32, { characterSpacing: 2 })
+    doc.fontSize(22).fillColor(WHITE).font('Helvetica-Bold').text(businessName, MARGIN, 46)
+    doc.fontSize(32).fillColor(WHITE).font('Helvetica-Bold').text(year, MARGIN, 28, { width: CONTENT_W, align: 'right' })
+    doc.fontSize(10).fillColor(SLATE).font('Helvetica').text('Financial Year Summary', MARGIN, 64, { width: CONTENT_W, align: 'right' })
 
-  const maxVal = Math.max(...data.map((m) => m.invoicedCents), 1)
-  const barWidth = 30
-  const barGap = 8
-  const chartHeight = 120
-  const chartWidth = (barWidth + barGap) * 12
+    // ── STAT CARDS ────────────────────────────────────────────────────────────
+    const cardY = 106
+    const cardH = 64
+    const cardW = (CONTENT_W - 16) / 3
 
-  const bars = data
-    .map((m, i) => {
-      const h = Math.round((m.invoicedCents / maxVal) * chartHeight)
-      const x = i * (barWidth + barGap)
-      const y = chartHeight - h
-      return `<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" fill="#10B981" rx="2"/>`
+    // Total Invoiced
+    doc.rect(MARGIN, cardY, cardW, cardH).fill(ROW_ALT)
+    doc.fontSize(8).fillColor(MUTED).font('Helvetica-Bold').text('TOTAL INVOICED', MARGIN + 16, cardY + 14, { characterSpacing: 1.2 })
+    doc.fontSize(20).fillColor(DARK).font('Helvetica-Bold').text(fmt(totalInvoiced), MARGIN + 16, cardY + 28)
+
+    // Total Collected
+    const card2X = MARGIN + cardW + 8
+    doc.rect(card2X, cardY, cardW, cardH).fill(ROW_ALT)
+    doc.rect(card2X, cardY, 4, cardH).fill(GREEN)
+    doc.fontSize(8).fillColor(MUTED).font('Helvetica-Bold').text('TOTAL COLLECTED', card2X + 16, cardY + 14, { characterSpacing: 1.2 })
+    doc.fontSize(20).fillColor(GREEN).font('Helvetica-Bold').text(fmt(totalPaid), card2X + 16, cardY + 28)
+
+    // Outstanding
+    const card3X = MARGIN + (cardW + 8) * 2
+    doc.rect(card3X, cardY, cardW, cardH).fill(ROW_ALT)
+    doc.rect(card3X, cardY, 4, cardH).fill(AMBER)
+    doc.fontSize(8).fillColor(MUTED).font('Helvetica-Bold').text('OUTSTANDING', card3X + 16, cardY + 14, { characterSpacing: 1.2 })
+    doc.fontSize(20).fillColor(AMBER).font('Helvetica-Bold').text(fmt(totalOutstanding), card3X + 16, cardY + 28)
+
+    // ── BAR CHART ─────────────────────────────────────────────────────────────
+    const chartY = cardY + cardH + 24
+    doc.fontSize(12).fillColor(DARK).font('Helvetica-Bold').text('Monthly Revenue', MARGIN, chartY)
+
+    const maxVal = Math.max(...data.map(m => m.invoicedCents), 1)
+    const chartH = 80
+    const barW = Math.floor(CONTENT_W / 12) - 4
+    const chartTop = chartY + 20
+
+    data.forEach((m, i) => {
+      const barH = Math.round((m.invoicedCents / maxVal) * chartH)
+      const x = MARGIN + i * (CONTENT_W / 12)
+      const y = chartTop + chartH - barH
+      if (barH > 0) doc.rect(x, y, barW, barH).fill(GREEN)
+      doc.fontSize(7).fillColor(MUTED).font('Helvetica').text(MONTH_NAMES[i], x, chartTop + chartH + 4, { width: barW, align: 'center' })
     })
-    .join('')
 
-  const labels = monthNames
-    .map((name, i) => {
-      const x = i * (barWidth + barGap) + barWidth / 2
-      return `<text x="${x}" y="${chartHeight + 16}" text-anchor="middle" font-size="9" fill="#45464d">${name}</text>`
+    // ── TABLE ─────────────────────────────────────────────────────────────────
+    const tableY = chartTop + chartH + 22
+    const ROW_H = 28
+    const colW = [CONTENT_W * 0.18, CONTENT_W * 0.22, CONTENT_W * 0.22, CONTENT_W * 0.22, CONTENT_W * 0.16]
+    const colX = [MARGIN, MARGIN + colW[0], MARGIN + colW[0] + colW[1], MARGIN + colW[0] + colW[1] + colW[2], MARGIN + colW[0] + colW[1] + colW[2] + colW[3]]
+    const PAD = 10
+
+    // Header
+    doc.rect(MARGIN, tableY, CONTENT_W, ROW_H).fill(DARK)
+    const headers = [['Month', 'left'], ['Invoiced', 'right'], ['Collected', 'right'], ['Outstanding', 'right'], ['Invoices', 'right']]
+    headers.forEach(([h, align], i) => {
+      doc.fontSize(8).fillColor(WHITE).font('Helvetica-Bold')
+        .text(h.toUpperCase(), colX[i] + PAD, tableY + 9, { width: colW[i] - PAD * 2, align, characterSpacing: 1 })
     })
-    .join('')
 
-  const rows = data
-    .map((m, i) => {
-      const bg = i % 2 === 0 ? '#f7f9fb' : '#ffffff'
-      return `
-      <tr style="background:${bg}">
-        <td style="padding:10px 16px;font-weight:600">${monthNames[i]}</td>
-        <td style="padding:10px 16px;text-align:right">${fmt(m.invoicedCents)}</td>
-        <td style="padding:10px 16px;text-align:right;color:#10B981">${fmt(m.paidCents)}</td>
-        <td style="padding:10px 16px;text-align:right;color:#F59E0B">${fmt(m.outstandingCents)}</td>
-        <td style="padding:10px 16px;text-align:right">${m.count}</td>
-      </tr>`
+    let ry = tableY + ROW_H
+    data.forEach((m, i) => {
+      doc.rect(MARGIN, ry, CONTENT_W, ROW_H).fill(i % 2 === 0 ? ROW_ALT : WHITE)
+      doc.fontSize(11).fillColor(DARK).font('Helvetica-Bold').text(MONTH_NAMES[i], colX[0] + PAD, ry + 8, { width: colW[0] - PAD * 2 })
+      doc.font('Helvetica').text(fmt(m.invoicedCents), colX[1] + PAD, ry + 8, { width: colW[1] - PAD * 2, align: 'right' })
+      doc.fillColor(GREEN).text(fmt(m.paidCents), colX[2] + PAD, ry + 8, { width: colW[2] - PAD * 2, align: 'right' })
+      doc.fillColor(AMBER).text(fmt(m.outstandingCents), colX[3] + PAD, ry + 8, { width: colW[3] - PAD * 2, align: 'right' })
+      doc.fillColor(DARK).text(String(m.count), colX[4] + PAD, ry + 8, { width: colW[4] - PAD * 2, align: 'right' })
+      ry += ROW_H
     })
-    .join('')
 
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8"/>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; font-size: 13px; color: #191c1e; background: #fff; }
-    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&display=swap');
-  </style>
-</head>
-<body>
-  <div style="background:#0F172A;color:#fff;padding:40px 48px;display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-family:'Manrope',sans-serif;font-size:11px;letter-spacing:0.15em;color:#94a3b8;text-transform:uppercase;margin-bottom:6px">Annual Report</div>
-      <div style="font-family:'Manrope',sans-serif;font-size:28px;font-weight:800">${settings.businessName}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-family:'Manrope',sans-serif;font-size:36px;font-weight:800">${year}</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">Financial Year Summary</div>
-    </div>
-  </div>
+    // ── FOOTER ────────────────────────────────────────────────────────────────
+    const footerY = ry + 16
+    doc.moveTo(MARGIN, footerY).lineTo(PAGE_W - MARGIN, footerY).strokeColor(BORDER).lineWidth(1).stroke()
+    const generated = new Date().toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' })
+    doc.fontSize(9).fillColor(MUTED).font('Helvetica')
+      .text(`${businessName}${abnText}`, MARGIN, footerY + 10, { width: CONTENT_W * 0.6 })
+      .text(`Generated ${generated}`, MARGIN, footerY + 10, { width: CONTENT_W, align: 'right' })
 
-  <div style="padding:40px 48px">
-    <div style="display:flex;gap:24px;margin-bottom:40px">
-      <div style="flex:1;background:#f7f9fb;border-radius:8px;padding:24px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#45464d;text-transform:uppercase;margin-bottom:8px">Total Invoiced</div>
-        <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800">${fmt(totalInvoiced)}</div>
-      </div>
-      <div style="flex:1;background:#f7f9fb;border-radius:8px;padding:24px;border-left:4px solid #10B981">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#45464d;text-transform:uppercase;margin-bottom:8px">Total Collected</div>
-        <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#10B981">${fmt(totalPaid)}</div>
-      </div>
-      <div style="flex:1;background:#f7f9fb;border-radius:8px;padding:24px;border-left:4px solid #F59E0B">
-        <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#45464d;text-transform:uppercase;margin-bottom:8px">Outstanding</div>
-        <div style="font-family:'Manrope',sans-serif;font-size:24px;font-weight:800;color:#F59E0B">${fmt(totalOutstanding)}</div>
-      </div>
-    </div>
-
-    <div style="margin-bottom:40px">
-      <div style="font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;margin-bottom:20px">Monthly Revenue</div>
-      <svg width="${chartWidth}" height="${chartHeight + 24}" viewBox="0 0 ${chartWidth} ${chartHeight + 24}">
-        ${bars}
-        ${labels}
-      </svg>
-    </div>
-
-    <table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden">
-      <thead>
-        <tr style="background:#0F172A;color:#fff">
-          <th style="padding:12px 16px;text-align:left;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Month</th>
-          <th style="padding:12px 16px;text-align:right;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Invoiced</th>
-          <th style="padding:12px 16px;text-align:right;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Collected</th>
-          <th style="padding:12px 16px;text-align:right;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Outstanding</th>
-          <th style="padding:12px 16px;text-align:right;font-size:10px;letter-spacing:0.15em;text-transform:uppercase">Invoices</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  </div>
-
-  <div style="padding:24px 48px;border-top:1px solid #e0e3e5;display:flex;justify-content:space-between;color:#45464d;font-size:11px">
-    <span>${settings.businessName}${settings.abn ? ` — ABN ${settings.abn}` : ''}</span>
-    <span>Generated ${new Date().toLocaleDateString('en-CA', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-  </div>
-</body>
-</html>`
-
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    doc.end()
   })
-  try {
-    const page = await browser.newPage()
-    await page.setContent(html, { waitUntil: 'networkidle0' })
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true })
-    return pdfBuffer
-  } finally {
-    await browser.close()
-  }
 }
