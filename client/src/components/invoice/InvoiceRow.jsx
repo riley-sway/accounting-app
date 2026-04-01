@@ -32,10 +32,7 @@ export default function InvoiceRow({ invoice }) {
   }
 
   const handleDownload = () => {
-    const a = document.createElement('a')
-    a.href = apiUrl(`/invoices/${invoice.id}/pdf`)
-    a.download = `${invoice.invoiceNumber}.pdf`
-    a.click()
+    window.open(apiUrl(`/invoices/${invoice.id}/pdf`), '_blank')
   }
 
   const daysLate = invoice.status === 'overdue'

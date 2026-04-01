@@ -144,14 +144,7 @@ export default function CreateInvoice() {
       } else if (pendingPDF) {
         const savedId = res.data.id
         const savedNum = res.data.invoiceNumber
-        if (pendingPDF === 'download') {
-          const a = document.createElement('a')
-          a.href = apiUrl(`/invoices/${savedId}/pdf`)
-          a.download = `${savedNum}.pdf`
-          a.click()
-        } else {
-          window.open(`/api/invoices/${savedId}/pdf`, '_blank')
-        }
+        window.open(apiUrl(`/invoices/${savedId}/pdf`), '_blank')
         setPendingPDF(null)
         toast.success(`${savedNum} saved`)
         navigate('/invoices')
@@ -187,14 +180,7 @@ export default function CreateInvoice() {
     if (!form.dueDate) return toast.error('Please set a due date')
     if (lineItems.some((li) => !li.service)) return toast.error('All line items need a description')
     if (isEdit) {
-      if (mode === 'download') {
-        const a = document.createElement('a')
-        a.href = apiUrl(`/invoices/${id}/pdf`)
-        a.download = `${invoiceNumber}.pdf`
-        a.click()
-      } else {
-        window.open(`/api/invoices/${id}/pdf`, '_blank')
-      }
+      window.open(apiUrl(`/invoices/${id}/pdf`), '_blank')
     } else {
       setPendingPDF(mode)
       mutation.mutate(buildPayload('draft'))

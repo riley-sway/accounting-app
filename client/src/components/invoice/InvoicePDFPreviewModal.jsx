@@ -6,10 +6,7 @@ export default function InvoicePDFPreviewModal({ invoice, onClose }) {
   const pdfUrl = apiUrl(`/invoices/${invoice.id}/pdf`)
 
   const handleDownload = () => {
-    const a = document.createElement('a')
-    a.href = pdfUrl
-    a.download = `${invoice.invoiceNumber}.pdf`
-    a.click()
+    window.open(pdfUrl, '_blank')
   }
 
   return (
