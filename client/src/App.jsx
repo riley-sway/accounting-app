@@ -11,6 +11,11 @@ import InvoiceList from './pages/InvoiceList'
 import CreateInvoice from './pages/CreateInvoice'
 import ClientDirectory from './pages/ClientDirectory'
 import Reports from './pages/Reports'
+import Login from './pages/Login'
+
+function RequireAuth({ children }) {
+  return localStorage.getItem('auth_token') ? children : <Navigate to="/login" replace />
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -23,7 +28,8 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<AppShell />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="invoices" element={<InvoiceList />} />

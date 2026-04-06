@@ -8,6 +8,8 @@ import dashboardRouter from './routes/dashboard.js'
 import reportsRouter from './routes/reports.js'
 import settingsRouter from './routes/settings.js'
 import importRouter from './routes/import.js'
+import authRouter from './routes/auth.js'
+import { requireAuth } from './middleware/auth.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -19,12 +21,13 @@ app.use(cors({ origin: CORS_ORIGIN }))
 app.use(morgan('dev'))
 app.use(express.json())
 
-app.use('/api/clients', clientsRouter)
-app.use('/api/invoices', invoicesRouter)
-app.use('/api/dashboard', dashboardRouter)
-app.use('/api/reports', reportsRouter)
-app.use('/api/settings', settingsRouter)
-app.use('/api/import', importRouter)
+app.use('/api/auth', authRouter)
+app.use('/api/clients', requireAuth, clientsRouter)
+app.use('/api/invoices', requireAuth, invoicesRouter)
+app.use('/api/dashboard', requireAuth, dashboardRouter)
+app.use('/api/reports', requireAuth, reportsRouter)
+app.use('/api/settings', requireAuth, settingsRouter)
+app.use('/api/import', requireAuth, importRouter)
 
 app.use(errorHandler)
 

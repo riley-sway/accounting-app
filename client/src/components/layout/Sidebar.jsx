@@ -83,13 +83,16 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Footer links */}
         <div className="border-t border-white/10 pt-4 space-y-1 px-2">
-          <a
-            href="#"
-            className="flex items-center gap-3 mx-2 px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors"
+          <button
+            onClick={() => {
+              localStorage.removeItem('auth_token')
+              navigate('/login')
+            }}
+            className="flex items-center gap-3 mx-2 px-4 py-2 text-slate-400 hover:text-white text-sm transition-colors w-full"
           >
-            <span className="material-symbols-outlined text-[20px]">contact_support</span>
-            <span style={{ fontFamily: 'Manrope, sans-serif' }}>Support</span>
-          </a>
+            <span className="material-symbols-outlined text-[20px]">logout</span>
+            <span style={{ fontFamily: 'Manrope, sans-serif' }}>Sign out</span>
+          </button>
         </div>
       </aside>
     </>
