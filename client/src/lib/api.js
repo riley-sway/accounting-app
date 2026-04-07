@@ -24,6 +24,10 @@ api.interceptors.response.use(
   }
 )
 
-export const apiUrl = (path) => `${BASE}${path}`
+export const apiUrl = (path) => {
+  const token = localStorage.getItem('auth_token')
+  const sep = path.includes('?') ? '&' : '?'
+  return `${BASE}${path}${token ? `${sep}token=${token}` : ''}`
+}
 
 export default api
