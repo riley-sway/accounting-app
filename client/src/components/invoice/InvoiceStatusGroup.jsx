@@ -41,7 +41,7 @@ export default function InvoiceStatusGroup({ status, invoices }) {
               <th className="px-8 py-5 font-bold text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody>
             {invoices.map((inv) => (
               <InvoiceRow key={inv.id} invoice={inv} />
             ))}

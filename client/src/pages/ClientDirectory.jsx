@@ -134,7 +134,7 @@ export default function ClientDirectory() {
                 <th className="px-8 py-5 font-bold text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody>
               {filtered.map((client) => (
                 <tr key={client.id} className="group hover:bg-slate-50 transition-colors">
                   <td className="px-8 py-5">
